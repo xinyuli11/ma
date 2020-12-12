@@ -1,0 +1,207 @@
+---
+title: "Homework6"
+author: "Xinyu Li"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Homework6}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+### question
+Exercises 7.1, 7.5, 7.8, and 7.11 (pages 212-213, Statistical Computating with R)
+
+### answer
+#### **Exercises 7.1**
+Compute a jackknife estimate of the bias and the standard error of the correcation statistic in Example 7.2.
+
+##### solution:
+```{r warning=FALSE}
+set.seed(1234)
+library(bootstrap)
+b.cor <- function(x,i) cor(x[i,1],x[i,2])
+b<-data.matrix(law)
+theta.hat <- b.cor(b,1:15)
+theta.jack <- numeric(15)
+for(i in 1:15){
+    theta.jack[i] <- b.cor(b,(1:15)[-i])
+}
+bias.jack <- (15-1)*(mean(theta.jack)-theta.hat)
+se.jack <- sqrt((15-1)*mean((theta.jack-theta.hat)^2))
+round(c(original=theta.hat,bias.jack=bias.jack,
+        se.jack=se.jack),3)
+```
+The deviation is -0.006 and the standard error is 0.143.
+
+#### **Exercises 7.5**
+Refer to Exercise 7.4. Compute 95% bootstrap confidence intervals for the mean time between failures 1/λ by the standard normal, basic, percentile,and BCa methods. Compare the intervals and explain why they may differ.
+
+##### solution:
+$$f(x)=\left\{\begin{array}{ll}\lambda e^{-\lambda t} & x>0 \\0 & x \leq 0\end{array}\right.(\lambda=1)$$
+```{r}
+library(boot)
+```
+
+
+```{r}
+n=1e1
+R<-rexp(n,rate=1)
+data(R, package = "boot") 
+boot.obj <- boot(aircondit, R = 2000, statistic = function(x, i){mean(x[i,1])})
+print(boot.ci(boot.obj, type=c("basic","norm","perc","bca")))
+```
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+mu<-1;n<-1e1;m<-1e4;library(boot);set.seed(1)
+boot.mean <- function(x,i) 1/mean(x[i])
+ci.norm<-ci.basic<-ci.perc<-ci.bca<-matrix(NA,m,2)
+for(i in 1:m){
+  R<-rexp(n,rate=1)
+  de <- boot(data=R,statistic=boot.mean, R = 999)
+  ci <- boot.ci(de,type=c("norm","basic","perc","bca"))
+  ci.norm[i,]<-ci$norm[2:3];ci.basic[i,]<-ci$basic[4:5]
+  ci.perc[i,]<-ci$percent[4:5];ci.bca[i,]<-ci$bca[4:5] }
+cat('norm =',mean(ci.norm[,1]<=mu & ci.norm[,2]>=mu),
+    'basic =',mean(ci.basic[,1]<=mu & ci.basic[,2]>=mu),
+    'perc =',mean(ci.perc[,1]<=mu & ci.perc[,2]>=mu),
+    'BCa =',mean(ci.bca[,1]<=mu & ci.bca[,2]>=mu))
+```
+From the results, the judgment criterion is that the closer to 0.95, the better the effect, and the value of norm is SMALLER, which is the closest, so the norm value is the best. In addition, because the exponential distribution is tailed, its statistics are not smooth. Therefore, the effect is not very good. In addition, the distribution of the data may deviate from the true distribution.
+
+
+#### **Exercises 7.8**
+Refer to Exercise 7.7. Obtain the jackknife estimates of bias and standard
+error of θˆ.
+
+##### solution:
+```{r}
+n<-nrow(scor)
+jack<-numeric(n) 
+for (i in 1:n) {
+  scor<-scor[-i,]
+  cov.e<-eigen(cov(scor))
+  lameda<-cov.e$values
+  jack[i]<-lameda[1]/sum(lameda)
+}
+theta.hat<-eigen(cov(scor))$values[1]/sum(eigen(cov(scor))$values)
+bias.jack<-(n-1)*(mean(jack)-theta.hat)
+se.jack<-sqrt(n-1)*mean((jack - mean(jack))^2)
+print(c(bias.jack<-(n-1)*(mean(jack)-theta.hat),se.jack<-sqrt(n-1)*mean((jack - mean(jack))^2)))
+```
+The deviation is -0.520529657 and the standard error is 0.003501485.
+
+#### **Exercises 7.11**
+In Example 7.18, leave-one-out (n-fold) cross validation was used to select the
+best fitting model. Use leave-two-out cross validation to compare the models.
+
+##### solution
+The following is the leave two method, but it does not traverse all the combinations:
+```{r message=FALSE, warning=FALSE, paged.print=TRUE}
+library(lattice)
+library(DAAG)
+attach(ironslag)
+n <- length(magnetic)-1  #in DAAG ironslag
+e1 <- e2 <- e3 <- e4 <- numeric(n)
+# for n-fold cross validation
+# fit models on leave-one-out samples
+for (k in 1:n) {
+  y <- magnetic[-k]
+  y<-y[-k]
+  x <- chemical[-k]
+  x<-x[-k]
+  J1 <- lm(y ~ x)
+  yhat1 <- J1$coef[1] + J1$coef[2] * chemical[k]
+  yhat12 <- J1$coef[1] + J1$coef[2] * chemical[k+1]
+  e1[k] <- (magnetic[k] - yhat1)^2+(magnetic[k+1] - yhat12)^2
+  J2 <- lm(y ~ x + I(x^2))
+  yhat2 <- J2$coef[1] + J2$coef[2] * chemical[k] +J2$coef[3] * chemical[k]^2
+  yhat22 <- J2$coef[1] + J2$coef[2] * chemical[k+1] +J2$coef[3] * chemical[k+1]^2
+  e2[k] <- (magnetic[k] - yhat2)^2+(magnetic[k+1] - yhat22)^2
+  J3 <- lm(log(y) ~ x)
+  logyhat3 <- J3$coef[1] + J3$coef[2] * chemical[k]
+  yhat3 <- exp(logyhat3)
+  logyhat32 <- J3$coef[1] + J3$coef[2] * chemical[k+1]
+  yhat32 <- exp(logyhat32)
+  e3[k] <- (magnetic[k] - yhat3)^2+(magnetic[k+1] - yhat32)^2
+  J4 <- lm(log(y) ~ log(x))
+  logyhat4 <- J4$coef[1] + J4$coef[2] * log(chemical[k])
+  yhat4 <- exp(logyhat4)
+  logyhat42 <- J4$coef[1] + J4$coef[2] * log(chemical[k+1])
+  yhat42 <- exp(logyhat42)
+  e4[k] <- (magnetic[k] - yhat4)^2+(magnetic[k+1] - yhat42)^2
+}
+```
+
+```{r}
+c(mean(e1), mean(e2), mean(e3), mean(e4))
+```
+
+From the results, y ~ x + I(x^2) works best, and its mean square error is 35.93996.
+
+```{r message=FALSE, warning=FALSE}
+library(DAAG); attach(ironslag)
+L1 <- lm(magnetic ~ chemical)
+L2 <- lm(magnetic ~ chemical + I(chemical^2))
+L3 <- lm(log(magnetic) ~ chemical)
+L4 <- lm(log(magnetic) ~ log(chemical))
+```
+
+```{r eval=FALSE, include=FALSE}
+par(mfrow = c(1, 2))  #layout for graphs
+plot(L2$fit, L2$res)  #residuals vs fitted values
+abline(0, 0) #reference line
+qqnorm(L2$res) #normal probability plot
+qqline(L2$res) #reference line
+```
+
+
+
+The following is the result of leaving two and traversing all combinations:
+
+```{r message=FALSE, warning=FALSE}
+library(DAAG)
+attach(ironslag)
+a <- seq(10, 40, .1)
+n <- length(magnetic)
+c<-combn(n,2)
+m<-ncol(c)
+e1 <- e2 <- e3 <- e4 <- numeric(m)
+for(i in 1:m){
+  x<-magnetic[-c[,i]]
+  y<-chemical[-c[,i]]
+  J1 <- lm(y ~ x)
+  yhat11 <- J1$coef[1] + J1$coef[2] * chemical[c[1,i]] 
+  yhat12 <- J1$coef[1] + J1$coef[2] * chemical[c[2,i]] 
+  e1[i] <- (magnetic[c[1,i]]-yhat11)^2+(magnetic[c[2,i]] - yhat12)^2
+  
+  J2 <- lm(y ~ x + I(x^2))
+  yhat21 <- J2$coef[1] + J2$coef[2] * chemical[c[1,i]] + J2$coef[3] * chemical[c[1,i]]^2
+  yhat22 <- J2$coef[1] + J2$coef[2] * chemical[c[2,i]] + J2$coef[3] * chemical[c[2,i]]^2
+  e2[i] <- (magnetic[c[1,i]]-yhat21)^2+(magnetic[c[2,i]] - yhat22)^2
+  
+  J3 <- lm(log(y) ~ x)
+  logyhat31 <- J3$coef[1] + J3$coef[2] * chemical[c[1,i]] 
+  logyhat32 <- J3$coef[1] + J3$coef[2] * chemical[c[2,i]] 
+  yhat31<-exp(logyhat31)
+  yhat32<-exp(logyhat32)
+  e3[i] <- (magnetic[c[1,i]]-yhat31)^2+(magnetic[c[2,i]] - yhat32)^2
+  
+  J4 <- lm(log(y) ~ log(x))
+  logyhat41 <- J4$coef[1] + J4$coef[2] * log(chemical[c[1,i]])
+  logyhat42 <- J4$coef[1] + J4$coef[2] * log(chemical[c[2,i]]) 
+  yhat41 <- exp(logyhat41) 
+  yhat42 <- exp(logyhat42) 
+  e4[i] <- (magnetic[c[1,i]] - yhat41)^2+(magnetic[c[2,i]] - yhat42)^2
+
+}
+c(mean(e1), mean(e2), mean(e3), mean(e4))
+```
+The following is the result of leaving two methods and traversing all the combinations. It can be seen that the mean square error of L3 is smaller at this time, which means that the results of different cross-validation may be different, and a consistent verification method is required.
+
+```{r}
+summary(L3)
+```
+
+
+

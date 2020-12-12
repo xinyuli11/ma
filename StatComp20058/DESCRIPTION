@@ -1,0 +1,19 @@
+Package: StatComp20058
+Type: Package
+Title: Final Homework for 'Statistical Computing' course
+Version: 1.0
+Date: 2020-12-12
+Author: Xinyu Li
+Maintainer: Xinyu Li <xinyuli188@163.com>
+Description: Several R  function and all homeworks are included in this package for illustration. 
+License: GPL (>= 2)
+Imports: Rcpp (>= 0.12.16), microbenchmark, knitr, rmarkdown,lattice,actuar,qcc,ggplot2,MVN,MASS,DAAG,bootstrap,boot,energy,Ball,RANN
+LinkingTo: Rcpp
+RoxygenNote: 7.1.1
+Encoding: UTF-8
+VignetteBuilder: knitr
+LazyData: true 
+URL: http://github.com/xinyuli11/ma
+BugReports: http://github.com/xinyuli11/ma/StatComp20058/issues
+Depends: 
+    R (>= 2.10)

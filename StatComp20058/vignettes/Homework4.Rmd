@@ -1,0 +1,215 @@
+---
+title: "Homework4"
+author: "Xinyu Li"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Homework4}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+### question
+Exercises 5.13, 5.15, 6.4, and 6.5 (page 151 and 180,
+Statistical Computating with R).
+
+### answer
+
+#### **Exercises 5.13**
+##### solution:
+It can be seen from the meaning of the question: first, find the minimum approximation function, that is, a constant term  different from the integrand function：
+$$
+\theta=\int_{A} g(x) d x=\int_{A} \frac{g(x)}{\phi(x)} \phi(x) d x=E\left[\frac{g(X)}{\phi(X)}\right]
+$$
+$$
+\hat{\theta}=\overline{g(X)}=\frac{1}{n} \sum_{i=1}^{n} \frac{g\left(X_{i}\right)}{\phi\left(X_{i}\right)}
+$$
+$$
+\operatorname{Var}(\hat{\theta})=E\left[\hat{\theta}^{2}\right]-(E[\hat{\theta}])^{2}=\int_{A} \frac{g^{2}(x)}{\phi(x)} d s-\theta^{2}
+$$
+$$
+\left(\int_{A}|g(x)| d x\right)^{2}-\theta^{2}
+$$
+$$
+\phi(x)=\frac{|g(x)|}{\int_{A}|g(x)| d x}
+$$
+The final result is the approximation function of minimum variance distribution, and a function is selected by using the principle of approximation:$F_1$ and $F_2$.
+$$
+f_{1}(x)=\frac{\frac{1}{\sqrt{2\pi}} x^{2} e^{-\frac{x^{2}}{2}}}{\int_{1}^{+\infty} \frac{1}{\sqrt{2 \pi}} x^{2} e^{-\frac{x^{2}}{2}} d x}
+$$
+Due to $f_1$ and $f_1$ is only one constant, so the variance is zero_ The variance of $f_2$, so $f_1$ is smaller.
+Since the best function is not easy to find, the normal distribution function is used instead:
+$$f_2(x) = e^{-(x-1)}\\(x>1)$$
+$$
+f_3(x)=(x-1)e^{-\frac{(x-1)^{2}}{2}}\\\ (x>1)
+$$$
+$$f_4(x)=\frac{2}{\pi*(1+(x-1)^{2})}\\(x>1)$$
+
+The following is a simulation experiment to compare variance of $f_2$ and $f_3$ $f_4$:
+
+```{r}
+set.seed(123342)
+theta.hat <- se <- numeric(3)
+
+u <- runif(100000) 
+x <- 1-log(1-u)
+g<-function(x){
+  ((1/(2*pi)^(1/2))*(x^2)*exp(-(x^2)/2))*(x>1)
+}
+fg <- g(x) / (exp(-x+1))
+theta.hat[1]=mean(fg)
+se[1]=sd(fg)
+
+M<-runif(10000)
+c<-(-2*log(1-M))^(1/2)
+g<-function(x){
+  ((1/(2*pi)^(1/2))*((x+1)^2)*exp(-((x+1)^2)/2))
+}
+fg <- g(c) / (c*exp(-(c^2)/2))
+theta.hat[2]=mean(fg)
+se[2]=sd(fg)
+
+m<-10000
+g<-function(x){
+  (x^2/(2*pi)^0.5)*exp(-0.5*x^2)*(x>1)
+}
+u<-runif(m)
+x<-tan(pi*u/2)+1
+fg<-g(x)/((2/pi)*(1+(x-1)^2)^(-1))
+theta.hat[3]<-mean(fg)
+se[3]<-sd(fg)
+
+rbind(theta.hat, se)
+
+```
+It can be seen from the fitting results that $f_2$ and $f_3$,$f_4$ are the closest to each other, the variance of $f_2$ is smaller.
+
+
+#### **Exercises 5.15**
+##### solution:
+Firstly, it is known from example5.13 that the best estimation result obtained by using importance sampling in 5.10 is 0.5257801 and the standard deviation is 0.0970.
+```{r paged.print=TRUE}
+c1=d1=numeric(5)
+u <- runif(2000)
+x1 <- - log((1 - u * (1- exp(-1/5))))
+g1<-function(x){
+  exp(-x - log(1+x^2))*(x > 0) * (x < 1/5)
+}
+fg1 <- g1(x1)/(((exp(-x1)))/(1 - exp(-1/5)))
+c1[1] = mean(fg1)
+d1[1] = var(fg1)
+
+
+x2 <- - log((exp(-1/5) - u * (exp(-1/5)- exp(-2/5))))
+g2<-function(x){
+  exp(-x - log(1+x^2))*(x > 1/5) * (x < 2/5)
+}
+fg2 <- g2(x2)/(((exp(-x2)))/(exp(-1/5) - exp(-2/5)))
+c1[2] = mean(fg2)
+d1[2] = var(fg2)
+
+
+x3 <- - log((exp(-2/5) - u * (exp(-2/5)- exp(-3/5))))
+g3<-function(x){
+  exp(-x - log(1+x^2))*(x > 2/5) * (x < 3/5)
+}
+fg3 <- g3(x3)/(((exp(-x3)))/(exp(-2/5)- exp(-3/5)))
+c1[3] = mean(fg3)
+d1[3] = var(fg3)
+
+
+x4 <- - log((exp(-3/5) - u * (exp(-3/5)- exp(-4/5))))
+g4<-function(x){
+  exp(-x - log(1+x^2))*(x > 3/5) * (x < 4/5)
+}
+fg4 <- g4(x4)/(((exp(-x4)))/(exp(-3/5)- exp(-4/5)))
+c1[4] = mean(fg4)
+d1[4] = var(fg4)
+
+
+x5 <- - log(exp(-4/5) - u * (exp(-4/5)- exp(-1)))
+g5<-function(x){
+  exp(-x - log(1+x^2))*(x >4/5) * (x < 1)
+}
+fg5 <- g5(x5)/(((exp(-x5)))/(exp(-4/5)- exp(-1)))
+c1[5] = mean(fg5)
+d1[5] = var(fg5)
+
+theta.hat <- se <- numeric(2)
+theta.hat[2]=round(sum(c1),5)
+se[2]=round(sum(d1),5)
+theta.hat[1]=round(0.5257801,5)
+se[1]=round(0.0970,5)
+rbind(theta.hat, se)
+```
+The first column is stratified importance sampling, and the second column is importance sampling. Compared with importance sampling, the variance is significantly lower.
+
+
+#### **Exercises 6.4**
+##### solution:
+IF:$$x_{1} \cdots x_{n} \sim L N\left(\mu, \sigma^{2}\right)$$
+AND:$$Y_{i}=\operatorname{In} x_{i}$$
+SO：$$Y_{1} \cdots Y_{n} \sim N\left(\mu, \sigma^{2}\right)$$
+SO：
+$$\hat{\mu}=\frac{1}{n} \sum_{i} \ln x_{i}$$
+$$
+\frac{\hat{\mu}-\mu}{\frac{\sigma}{\sqrt{n}}} \sim N(0,1)
+$$
+$$S_{Y}^{2}=\frac{1}{n-1} \sum_{i}\left(ln(X_{i})-\hat{\mu}\right)^{2}$$
+$$\frac{(n-1) S_{Y}^{2}}{r^{2}} \sim \chi^{2}(n-1)$$
+$$
+t=\frac{\frac{\hat{\mu}-\mu}{\sigma} \cdot \sqrt{n}}{\sqrt{\frac{(n-1) s^{2}}{\sigma^{2}} / n-1}}=\frac{(\hat{\mu}-\mu) \sqrt{n}}{\sqrt{s^{2}}} \sim t(n-1)
+$$
+$$
+\hat{\mu}-t_\frac{\alpha}{2}\frac{S_Y}{n}<\mu<\hat{\mu}+t_\frac{\alpha}{2}\frac{S_Y}{n}
+$$
+Of which $S_Y$is an absolute value. To represent the value after the radix. The following is the confidence level estimation of Monte Carlo estimation:
+```{r}
+set.seed=123
+UCL <- replicate(10000, expr = {
+  s = rlnorm(20, meanlog = 0, sdlog = 1)
+  a = log(s)
+  sqrt(20)*abs(mean(a))/((20/19)*var(a))^(1/2)
+} )
+print(c(sum(UCL<qt(0.975,19)),mean(UCL<qt(0.975,19))))
+
+```
+It can be seen that the confidence level of the mean value estimated by Monte Carlo method is about 0.95, which shows that the model hypothesis is tenable.
+
+
+
+
+
+
+#### **Exercises 6.5**
+##### solution:
+The problem requires that the data distribution at this time is a chi square distribution: that is, to estimate the mean value of the chi square distribution, but because we do not know, we still use the t-test of normal distribution, as follows:
+```{r}
+n<-20
+m<-1000
+set.seed(12)
+#problem6.5
+CL1=matrix(0,m,2)
+for(i in 1:m){
+  x<-rchisq(n,2)
+  CL1[i,2]=mean(x)+((((20/19)*var(x))^(1/2))*qt(0.975,n-1))/(n^0.5)
+  CL1[i,1]=mean(x)-((((20/19)*var(x))^(1/2))*qt(0.975,n-1))/(n^0.5)
+}
+a1=mean(CL1[,1]<=2&CL1[,2]>=2)
+a2=sd(CL1[,1]<=2&CL1[,2]>=2)
+print(c(a1,a2))
+```
+the deviation is not large, so we can see that the standard deviation is small.
+For example 6.4: its estimation of variance:
+
+```{r}
+n <- 20
+alpha <- .05
+UCL <- replicate(1000, expr = {
+x <- rchisq(n, df = 2)
+(n-1) * var(x) / qchisq(alpha, df = n-1)
+} )
+print(c(mean(UCL>4),sd(UCL)))
+```
+The deviation degree of the distance is 0.95, and the standard deviation is large. This shows that:
+Compared with variance estimation, mean t-estimation should be more robust to deviation from normality。

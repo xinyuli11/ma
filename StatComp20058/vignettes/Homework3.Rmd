@@ -1,0 +1,71 @@
+---
+title: "Homework3"
+author: "Xinyu Li"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Homework3}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+##### 5.1 Exercises
+ Compute a Monte Carlo estimate of
+ $$\int_{0}^{\pi / 3} \sin t d t$$
+ and compare your estimate with the exact value of the integral.
+
+```{r}
+m <- 1e6; x <- runif(m, min=0, max=pi/3)
+theta.hat <- mean(sin(x)) * (pi/3)
+print(c(theta.hat,-cos(pi/3) + cos(0)))
+```
+
+
+##### 5.7 Exercises
+ In Example 5.7 the control variate approach was illustrated for Monte Carlo
+integration of
+$$\theta=\int_{0}^{1} e^{x} d x$$
+Now consider the antithetic variate approach. Compute Cov(eU , e1−U ) and V ar(eU + e1−U ), where U ∼ Uniform(0,1). What is the percent reduction in variance of ˆθ that can be achieved using antithetic variates (compared with simple MC)?
+```{r}
+#简单蒙特卡罗模拟积分
+m <- 1e6; x <- runif(m, min=0, max=1)
+theta.hat <- mean(exp(x)) 
+print(c(theta.hat,exp(1)-exp(0)))
+```
+```{r}
+#antithetic variate approach
+seed=1234
+m <- 1e8
+u <- runif(m/2,0,1)
+v <- 1 - u
+print(c(theta.hat,(sum(exp(u))+sum(exp(v)))/m,exp(1)-exp(0)))
+```
+```{r}
+#计算方差
+sd1<-sd(exp(u)+exp(v))
+sd2<-sd(exp(x))
+sd3<-sd1/sd2
+print(c(sd1,sd2,sd3))
+```
+
+
+##### 5.11 Exercises
+If ˆθ1 and ˆθ2 are unbiased estimators of θ, and ˆθ1 and ˆθ2 are antithetic, we derived that c∗ = 1/2 is the optimal constant that minimizes the variance ofˆ θc = cˆθ2 + (1 − c)ˆθ2. Derive c∗ for the general case. That is, if ˆθ1 and ˆθ2 are any two unbiased estimators of θ, find the value c∗ that minimizes the variance of the estimator ˆθc = cˆθ2 + (1 − c)ˆθ2 in equation (5.11). (c∗ will be a function of the variances and the covariance of the estimators.)
+$$
+\operatorname{Var}\left(\hat{\theta}_{1}\right)=a, \operatorname{var}\left(\hat{\theta}_{2}\right)=b, \operatorname{cov}\left(\hat{\theta}_{1}, \hat{\theta}_{2}\right)=d$$
+$$
+\operatorname{Var}\left(c \hat{\theta}_{1}+(1-c) \hat{\theta}_{2}\right)=c^{2} \operatorname{Var}\left(\hat{\theta}_{1}\right)+2 c(1-c) \operatorname{cov}\left(\hat{\theta}_{1}, \hat{\theta}_{2}\right)+(1-c)^{2} \operatorname{var}\left(\hat{\theta}_{2}\right)
+$$
+$$
+\begin{array}{l}
+=c^{2} a+2 c(1-c) d+(1-c)^{2} b \\
+=(a-2 d+b){c}^{2}+(2 d-2 b) c+b
+\end{array}$$
+$$
+\left[\operatorname{Var}\left(c \hat{\theta}_{1}+(1-c) \hat{\theta}_{2}\right)\right]_{c}^{\prime}=2(a-2 d+b)c+(2b-2b)=0
+$$
+$$
+c=\frac{b-d}{a-2 d+b}
+$$
+$$\therefore\frac{(b-d)^{2}}{a-2d+b}- \frac{2(b-d)}{a-2d+b}+b$$
+$$=b-\frac{b-d}{a-2 d+b}=b+\frac{d-b}{a-2 d+b}$$

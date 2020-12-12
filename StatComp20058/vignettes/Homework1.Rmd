@@ -1,0 +1,59 @@
+---
+title: "Homework1"
+author: "Xinyu Li"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Homework1}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+## Question 1
+
+Use knitr to produce an example in the book which contains at least one figure.
+
+## Answer 1
+
+Use lattice package to compare the ECDF and CDF of random data from normal distribution. 
+```{r}
+library(lattice)
+n <- seq(20, 50, 10)
+x <- rnorm(sum(n))
+y <- factor(rep(n, n), labels=paste("n =", n))
+densityplot(~ x | y,
+panel = function(x, ...) {
+panel.densityplot(x, col="red", ...)
+panel.mathdensity(dmath=dnorm,
+args=list(mean=mean(x), sd=sd(x)),
+col="darkblue")
+})
+```
+
+The larger the sample size, the better the fitting effect.
+
+## Question 2
+
+Use knitr to produce an example in the book which contains at least one table.
+
+## Answer 2
+
+Use linear Regression to fit data.
+```{r}
+x1<-c(0.10, 0.11, 0.12, 0.13, 0.14, 0.15,
+0.16, 0.17, 0.18, 0.20)
+x2<-c(1,2,3,4,5,5,4,3,2,1)
+y<-c(42.0, 43.5, 49.0, 45.5, 45.0, 47.5,
+49.0, 53.0, 53.0, 55.0)
+lm.sol<-lm(y ~ x1+x2)
+knitr::kable(summary(lm.sol)$coef)
+```
+
+
+## Question 3
+
+Use knitr to produce an example in the book which contains at least a couple of Latex formulas.
+
+## Answer 3
+
+Pdf of multivariate normal distribution:
+$$f_{\mathbf{x}}\left(x_{1}, \ldots, x_{k}\right)=\frac{1}{\sqrt{(2 \pi)^{k}|\mathbf{\Sigma}|}} \exp \left(-\frac{1}{2}(\mathbf{x}-\boldsymbol{\mu})^{\mathrm{T}} \mathbf{\Sigma}^{-1}(\mathbf{x}-\boldsymbol{\mu})\right)$$

@@ -1,0 +1,248 @@
+---
+title: "Homework5"
+author: "Xinyu Li"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Homework5}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+### question
+Exercises 6.7, 6.8, and 6.C (pages 180-182, Statistical Computating with R).
+
+### answer
+
+#### **Exercises 6.7**
+Estimate the power of the skewness test of normality against symmetric Beta(α, α) distributions and comment on the results. Are the results different for heavy-tailed symmetric alternatives such as t(ν)?
+
+#####  solution:
+use:n=30,alpha=0.1,replicate=1000.$beta(n,n)$'s n:from 0 to 100 and $t(n)$ so on
+```{r warning=FALSE}
+sk <- function(x) {
+  xbar <- mean(x)
+  m3 <- mean((x - xbar)^3)
+  m2 <- mean((x - xbar)^2)
+  return( m3 / m2^1.5 )
+}
+alpha <- .1
+n <- 30
+m <- 1000
+nofbeta<- c(seq(0, 100, 1))
+N <- length(nofbeta)
+pwr <- numeric(N)
+cv <- qnorm(1-alpha/2, 0, sqrt(6*(n-2) / ((n+1)*(n+3))))
+for (j in 1:N) { 
+  e <- nofbeta[j]
+  sktests <- numeric(m)
+  for (i in 1:m) { 
+    x <- rbeta(n,e,e)
+    sktests[i] <- as.integer(abs(sk(x)) >= cv)
+  }
+  pwr[j] <- mean(sktests)
+}
+plot(nofbeta, pwr, ylim = c(0,1))
+abline(h = .1, lty = 1)
+se <- sqrt(pwr * (1-pwr) / m)
+lines(nofbeta, pwr+se, lty = 3)
+lines(nofbeta, pwr-se, lty = 3)
+```
+```{r warning=FALSE}
+alpha <- .1
+n <- 30
+m <- 1000
+noft<- c(seq(0, 100, 1))
+N <- length(noft)
+pwr <- numeric(N)
+cv <- qnorm(1-alpha/2, 0, sqrt(6*(n-2) / ((n+1)*(n+3))))
+for (j in 1:N) { 
+  e <- noft[j]
+  sktests <- numeric(m)
+  for (i in 1:m) { 
+    x <- rt(n,e)
+    sktests[i] <- as.integer(abs(sk(x)) >= cv)
+  }
+  pwr[j] <- mean(sktests)
+}
+plot(noft, pwr, ylim = c(0,1))
+abline(h = .1, lty = 1)
+se <- sqrt(pwr * (1-pwr) / m)
+lines(noft, pwr+se, lty = 3)
+lines(noft, pwr-se, lty = 3)
+```
+
+
+The empirical power curve is shown in Figure 1; Note that the power curve crosses the horizontal line corresponding to α = 0.10 at $\alpha>20$ where the alternative is normally distributed. For  the empirical power of the test is smaller than 0.10 and best small when about $\alpha=3$.
+Comparing it with the t distribution, you can find:The empirical power curve is shown in Figure 2, Note that the power curve crosses the horizontal line corresponding to α = 0.10 at $\alpha>30$ where the alternative is normally distributed. For  the empirical power of the test iss greater than 0.10 and highestwhen $\alpha$ is about 0.
+As the parameters increase or the degrees of freedom increase, both the beta distribution and the T distribution approach the normal distribution.
+
+
+#### **Exercises 6.8**
+Refer to Example 6.16. Repeat the simulation, but also compute the F test of equal variance, at significance level ˆα .= 0.055. Compare the power of the Count Five test and F test for small, medium, and large sample sizes. (Recall that the F test is not applicable for non-normal distributions.)
+
+#####  solution:
+Now perform the the power of equal variance F test and the Count Five test with a sample size of 20 :
+```{r}
+power1<-numeric(2)
+set.seed(2334)
+m=1000
+count5test <- function(x, y) {
+  X <- x - mean(x)
+  Y <- y - mean(y)
+  outx <- sum(X > max(Y)) + sum(X < min(Y))
+  outy <- sum(Y > max(X)) + sum(Y < min(X))
+  # return 1 (reject) or 0 (do not reject H0)
+  return(as.integer(max(c(outx, outy)) > 5.5))
+}
+sigma1 <- 1
+sigma2 <- 1.5
+power <-(replicate(m, expr={
+  x <- rnorm(20, 0, sigma1)
+  y <- rnorm(20, 0, sigma2)
+  count5test(x, y)
+}))
+power1[1]<-mean(power)
+
+sigma1 <- 1
+sigma2 <- 1.5
+pvalues <- (replicate(m, expr={
+  x <- rnorm(20, 0, sigma1)
+  y <- rnorm(20, 0, sigma2)
+  Ftest = var.test(y, x, ratio = 1)
+  Ftest$p.value
+}))
+power1[2] = mean(pvalues <= .055)
+rbind(power1)
+
+```
+The empirical power of the test is 0.317 and 0.396 against the alternative ($\sigma_1$= 1, $\sigma_2$= 1.5) with n1= n2= 20. The following simulations under different samples.
+```{r warning=FALSE}
+n <- c(10, 20, 30, 40, 50, 60,70,80,90,100,150)
+m=1000
+sigma1 <- 1
+sigma2 <- 1.5
+power<-power2 <- numeric(length(n)) 
+for (i in 1:length(n)) {
+  sktests <- numeric(m)  
+  for (j in 1:m) {
+    x <- rnorm(n[i],0,sigma1)
+    y<-rnorm(n[i],0,sigma2)
+    sktests[j]= count5test(x, y)
+  }
+  power[i] <- mean(sktests) 
+}
+for (i in 1:length(n)) {
+  sktests <- numeric(m)  
+  for (j in 1:m) {
+    x <- rnorm(n[i],0,sigma1)
+    y<-rnorm(n[i],0,sigma2)
+    Ftest = var.test(y, x, ratio = 1)
+    sktests[j]= Ftest$p.value
+  }
+  power2[i] <- mean(sktests<0.055) 
+}
+rbind(n,power,power2)
+library(ggplot2)
+ggplot(ylab="POWER")+geom_line(data=data.frame(n,power),aes(n,power),col = 'red')+geom_line(data=data.frame(n,power2),aes(n,power2),col = 'black')
+```
+
+The black line segment is the F test, and the red is  Count Five test. It can be clearly seen that the power of the F test is greater than the impact of Count Five test.
+
+
+#### **Exercises 6.C**
+Repeat Examples 6.8 and 6.10 for Mardia’s multivariate skewness test. Mar-dia [187] proposed tests of multivariate normality based on multivariate gen-eralizations of skewness and kurtosis. If X and Y are iid, the multivariate population skewness β1,dis defined by Mardia as:
+$$\beta_{1, d}=E\left[(X-\mu)^{T} \Sigma^{-1}(Y-\mu)\right]^{3}$$
+Under normality, β1,d= 0. The multivariate skewness statistic is:
+$$b_{1, d}=\frac{1}{n^{2}} \sum_{i, j=1}^{n}\left(\left(X_{i}-\bar{X}\right)^{T}
+\widehat{\Sigma}^{-1}\left(X_{j}-\bar{X}\right)\right)^{3}$$
+whereˆΣ is the maximum likelihood estimator of covariance. Large values of
+b1,dare significant. The asymptotic distribution of nb1,d/6 is chisquared with
+d(d+1)(d+2)/6 degrees of freedom.
+
+#####  solution:
+The original hypothesis is to obey the multivariate normal distribution, and the alternative hypothesis is that it does not obey the multivariate normal distribution.
+
+###### First, the impact of different sample sizes on the test results
+
+```{r warning=FALSE}
+library(MVN)
+library(MASS)
+n <- c(10, 50, 100, 150, 200, 500)
+p.values <-Statistic<- numeric(6)
+for (i in 1:length(n)) { 
+  Sigma <- matrix(c(1,0.2,0.2,100),2,2)
+  U <- mvrnorm(n[i], rep(0, 2), Sigma)
+  sk = mvn(U, mvnTest = c("mardia"))
+  sk1 = sk$multivariateNormality[3]
+  sk2 = sk$multivariateNormality[2]
+  a = data.frame(sk1[1])
+  b = data.frame(sk2[1])
+  pvalues1 =as.numeric(as.character(a$p.value[1]))
+  pvalues2 =as.numeric(as.character(b$Statistic[1]))
+  p.values[i]<- pvalues1
+  Statistic[i]<- pvalues2
+}
+rbind(n,Statistic,p.values)
+```
+It can be seen that under different samples, it does not reject the null hypothesis. Under the significance level, it can be determined to obey the multivariate normal.
+
+```{r warning=FALSE}
+library(MASS)
+library(MVN)
+set.seed(1234)
+alpha <-.05
+n <-30
+m <- 2500
+epsilon <- c(seq(0,1,.1))
+N <- length(epsilon)
+pwr <- numeric(N)
+cv <- qchisq(1-alpha/2,(2*(2+1)*(2+2)/6))
+for (j in 1:N) { 
+  e <- epsilon[j]
+  sktests <- numeric(m)
+  for (i in 1:m) {  
+    Sigma <- matrix(c(1,e,e,100),2,2)
+    U <- mvrnorm(n, rep(0, 2), Sigma)
+    sk = mvn(U, mvnTest = c("mardia"))
+    sk2 = sk$multivariateNormality[2]
+    b = data.frame(sk2[1])
+    pvalues2 =as.numeric(as.character(b$Statistic[1]))
+    sktests[i] <- as.integer(abs(n*pvalues2/6) >= cv)
+  }
+  pwr[j] <- mean(sktests)
+}
+n<-c(seq(0,1,.1))
+rbind(n,pwr)
+```
+```{r}
+plot(epsilon, pwr, type = "b",
+     xlab = bquote(epsilon), ylim = c(0,1))
+abline(h = .05, lty = 3)
+se <- sqrt(pwr * (1-pwr) / m) #add standard errors
+lines(epsilon, pwr+se, lty = 3)
+lines(epsilon, pwr-se, lty = 3)
+```
+
+
+It can be seen that under different parameters, Mardia’s multivariate skewness test is more stable.
+
+
+#### **Exercises Discussion**
+ If we obtain the powers for two methods under a particularsimulation setting with 10,000 experiments: say, 0.651 for one method and 0.676 for another method. Can we say the powers are different at 0.05 level?
+ 
+######  What is the corresponding hypothesis test problem?
+######  What test should we use? Z-test, two-sample t-test, paired-ttest or McNemar test?
+######  What information is needed to test your hypothesis?
+
+#####  solution:
+###### 1.
+H0: $\mu_0=\mu_1$
+H1:$\mu_0\neq\mu_1$
+The null hypothesis is that the test results obtained by the two methods are consistent, and the alternative hypothesis is inconsistent.
+
+###### 2.
+First of all, for Z test, it is suitable for single sample test under normal circumstances, but here because its sample size is 10,000, it belongs to large sample test, so it can be used as a candidate test. For two sample T test, it is taken from the same The experiments are performed in different groups as a whole, so there is a certain correlation between the two samples, which violates the premise of the T test, so it is not applicable. The paired sample T test is applicable, because here is the sample that has been subjected to two independent experiments, and the last test is McNemar test, which is a non-parametric test, because it can be reduced to a binomial distribution test problem, it should also be applicable.
+
+###### 3.
+The sample size, the variance of the two groups of experiments, the results of the two groups of experiments, the value of related statistics, whether the two experiments are carried out independently, and whether the order is consistent,

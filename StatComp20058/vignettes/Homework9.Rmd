@@ -1,0 +1,102 @@
+---
+title: "Homework9"
+author: "Xinyu Li"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Homework9}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+### question
+
+1.A-B-O blood type problem
+
+2.Exercises 3 (page 204, Advanced R).
+
+3.Excecises 3 and 6 (page 213-214, Advanced R). Note: the anonymous function is defined in Section 10.2 (page 181, R)
+
+
+### answer
+#### **Exercise 1**
+
+A-B-O blood type problem:
+1.Observed data: nA· = nAA + nAO = 444 (A-type),nB· = nBB + nBO = 132 (B-type), nOO = 361 (O-type),nAB = 63 (AB-type).
+
+2.Let the three alleles be A, B, and O.solve MLE of p and q (consider missing data nAA and nBB).
+ 
+3.Record the values of p and q that maximize the conditionallikelihood in each EM steps, calculate the correspondinglog-maximum likelihood values (for observed data), are they increasing?
+
+
+##### solution:
+
+1.
+Let the three alleles be A, B, and O:
+```{r}
+dat <- rbind(Genotype=c('AA','BB','OO','AO','BO','AB','Sum'),
+                 Frequency=c('p^2','q^2','r^2','2pr','2qr','2pq','1'),
+                 Count=c('AA','BB','OO','AO','BO','AB','n'))
+dat
+```
+L:
+$$L\left(p ,q\mid n_{A}., n_{B}.,n_{OO},n_{AB}\right)=\left(p^{2}+2pr\right)^{n_{A}.}\left(q^{2}+2qr\right)^{n_{B}.}\left(r^{2}\right)^{n_{OO}}\left(2pq\right)^{n_{AB}} \Rightarrow p=0.3, q=0.1, r=0.6$$
+
+E:
+$$L\left(p ,q\mid n_{A}., n_{B}.,n_{OO},n_{AB},n_{AA},n_{BB}\right)=\left(p^{2}\right)^{n_{AA}}\left(q^{2}\right)^{n_{BB}}\left(r^{2}\right)^{n_{OO}}\left(2pr\right)^{n_{A}.-n_{AA}}\left(2qr\right)^{n_{B}.-n_{BB}}\left(2pq\right)^{n_{AB}}$$
+
+M:
+$$I\left(p ,q\mid n_{A}., n_{B}.,n_{OO},n_{AB},n_{AA},n_{BB}\right)=n_{A A} \log (p/r)+n_{B B} \log (q/r)+2 n_{OO} \log (r)+n_{A}. \log (pr)+n_{B}. \log (qr)+n_{AB} \log (pq)$$
+
+```{r}
+est <- function(ep = 1e-8){
+  M = 0.2; N= 0.1
+  k = 1
+  repeat{
+    k = k+1
+    M[k]=(444*M[k-1]/(2-M[k-1]-2*N[k-1])+507)/2000
+    N[k]=(132*N[k-1]/(2-N[k-1]-2*M[k-1])+195)/2000
+    if(abs(M[k]-M[k-1])<ep | abs(N[k]-N[k-1])<ep)break
+  }
+  list(M=M[k], N=N[k], iter=k)
+}
+est()
+```
+
+2.
+fitting linear models to the mtcars using the formulas stored in this list:
+```{r message=FALSE, warning=FALSE}
+formulas <- list(
+mpg ~ disp,
+mpg ~ I(1 / disp),
+mpg ~ disp + wt,
+mpg ~ I(1 / disp) + wt
+)
+attach(mtcars) 
+formulas <- as.character(formulas)
+for (i in 1:length(formulas)){
+  lm <- lm(formulas[i])
+  print(lm)
+}
+lapply(formulas, function(x) lm(x))
+```
+
+3.
+
+
+#### **Exercise 3**
+The following code simulates the performance of a t-test for non-normal data. Extra challenge: get rid of the anonymous function by using  directly.
+
+##### solution:
+```{r}
+t <- replicate(
+  100,
+  t.test(rpois(10, 10), rpois(7, 10)),
+  simplify = FALSE
+)
+sapply(t, function(f) f$p.value)
+sapply(t, "[[", 3)
+```
+
+#### **Exercise 3 and 6**
+Implement a combination of Map() and vapply() to create an lapply() variant that iterates in parallel over all of its inputs and stores its outputs in a vector (or a matrix). What arguments should the function take?

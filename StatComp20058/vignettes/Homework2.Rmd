@@ -1,0 +1,114 @@
+---
+title: "Homework2"
+author: "Xinyu Li"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Homework2}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+##### 3.3 Exercises
+
+
+
+The Pareto(a, b) distribution has cdf:
+$$
+F(x)=1-\left(\frac{b}{x}\right)^{a}, \quad x \geq b>0, a>0
+$$
+Derive the probability inverse transformation $F^{-1}(U)$ and use the inverse transform method to simulate a random sample from the Pareto(2, 2) dis-tribution. Graph the density histogram of the sample with the Pareto(2, 2)
+density superimposed for comparison.
+```{r}
+library(actuar)
+set.seed(1234)
+x<-runif(100)
+a=2
+b=2
+U=runif(100)
+X<-2/((1-U)^(1/2))
+hist(X,prob=T,col=gray(0.9),main="pareto(2,2) from uniform")
+curve(dpareto(x,2,2),add=T,col="red",lwd=2)
+```
+
+
+
+#### 3.9 Exercises
+The rescaled Epanechnikov kernel  is a symmetric density function：
+$$f_{e}(x)=\frac{3}{4}\left(1-x^{2}\right), \quad|x| \leq 1$$
+Devroye and Györfi  give the following algorithm for simulation from this distribution. Generate iid U1,U2,U3∼ Uniform(−1,1). If |U3| ≥ |U2| and |U3| ≥ |U1|, deliver U2; otherwise deliver U3. Write a function to generate random variates from fe, and construct the histogram density
+estimate of a large simulated random sample.
+```{r}
+set.seed(12345)
+x1mn<-runif(100000,-1,1)
+x2mn<-runif(100000,-1,1)
+x3mn<-runif(100000,-1,1)
+data<-data.frame(x1=x1mn,x2=x2mn,x3=x3mn)
+head(data,5)
+result3=""
+m<-1
+for(i in 1:length(x1mn)){
+  if(abs(x3mn[i])>=abs(x2mn[i]) & abs(x3mn[i])>=abs(x1mn[i])){
+    result3[m]<-x2mn[i]
+  }else{
+    result3[m]<-x3mn[i]
+  }
+  m<-m+1
+}
+head(result3,5)
+```
+plot construct the histogram density estimate of a large simulated random sample:
+```{r}
+result3<-as.numeric(result3)
+hist(result3,prob=T,col=gray(0.9),main="Epanechnikov kernel from uniform")
+lines(density(result3),lwd=2,col="red")
+```
+
+
+
+#### 3.10 Exercises
+Prove that the algorithm given in Exercise 3.9 generates variates from the density fe(3.10).
+The prove go like this :
+
+$$\operatorname{cond} 1=\{|U 3| \geq|U 2|,|U 3| \geq|U 1|\} \quad \operatorname{cond} 2=\{\text { otherswise }\}$$
+$$\begin{array}{c}F(y)=P(Y \leq y)=P(Y \leq y, c o n d 1)+P(Y \leq y, cond2) \\
+P(Y \leq y, c o n d 1)=\int_{-1}^{y} d u_{2} \int_{\left|u_{3}\right| \geqslant\left|u_{2}\right|} d u_{3} \int_{\left|u_{3}\right| \geqslant\left|u_{1}\right|} \frac{1}{8} d u_{1} \\
+=\frac{y-\frac{1}{3} y^{3}}{4}
+\end{array}$$
+$$\begin{aligned}
+P(Y \leq y, \operatorname{cond} 2)=P(U 3 \leq&y)-\int_{-1}^{y} d u_{3} \int_{\left|u_{3}\right| \geqslant\left|u_{2}\right|} d u_{2} \int_{\left|u_{3}\right| \geqslant\left|u_{1}\right|} \frac{1}{8} d u_{1} \\
+&=\frac{1}{2} y-\frac{1}{6} y^{3}
+\end{aligned}$$
+$$\begin{aligned}f_{Y}(y)=F^{\prime}(y)=&\left[\frac{1}{4}\left(y-\frac{1}{3} y^{3}\right)-\left(\frac{1}{2} y-\frac{1}{6} y^{3}\right)\right]^{\prime} \\
+=& \frac{3}{4}\left(1-y^{2}\right)
+\end{aligned}$$
+
+```{r}
+set.seed(1234)
+x<-runif(100000,-1,1)
+hist(result3,prob=T,col=gray(0.9),main="pareto(2,2,4) from uniform")
+curve(3*(1-x^2)/4,add=T,col="red",lwd=2)
+```
+
+
+
+#### 3.13 Exercises
+
+Generate 1000 random observations from the mixture with r = 4 and β = 2. Compare the empirical and theoretical (Pareto) distributions by graph-ing the density histogram of the sample and superimposing the Pareto density curve.
+```{r}
+set.seed(1234)
+a=2
+b=4
+U=runif(1000)
+X1<-(a/((1-U)^(1/b)))-a
+hist(X1,prob=T,col=gray(0.9),main="the density histogram of the sample")
+lines(density(X1,kernel="epanechnikov"),col="red",lwd=2)
+```
+plot superimposing the Pareto density curve:
+
+  From the Pareto sample density curve and the Pareto cumulative probability curve, it can be seen that according to the 28th law, its 20% value accounts for 80% of the total sample, and there is little difference between experience and theory
+  
+```{r eval=FALSE, message=FALSE, include=FALSE}
+library(qcc)
+pareto.chart(X1, ylab = "Frequency",ylab2 ="累计百分比%", main='累积帕累托曲线',lwd=1)
+```
